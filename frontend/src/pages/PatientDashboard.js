@@ -3,6 +3,8 @@ import axios from 'axios';
 import { getUser, logoutUser } from '../utils/auth';
 import { useNavigate } from 'react-router-dom';
 import patientDashboardStyles from '../styles/patientDashboardStyles';
+import { API_URL } from '../config/api';
+
 
 const PatientDashboard = () => {
   const [appointments, setAppointments] = useState([]);
@@ -19,7 +21,7 @@ const PatientDashboard = () => {
   const navigate = useNavigate();const fetchAppointments = useCallback(async () => {
     if (!user) return;
     try {
-      const res = await axios.get('http://localhost:5000/appointments/all');
+      const res = await axios.get(`${API_URL}/appointments/all`);
       // Handle new API response format
       const appointmentsData = res.data.appointments || res.data;
       const patientAppointments = appointmentsData.filter(
@@ -32,7 +34,7 @@ const PatientDashboard = () => {
   }, [user]);
   const fetchDoctors = useCallback(async () => {
     try {
-      const res = await axios.get('http://localhost:5000/auth/doctors');
+      const res = await axios.get(`${API_URL}/auth/doctors`);
       // Handle both old and new API response formats
       const doctorsData = res.data.doctors || res.data;
       setDoctors(doctorsData);
@@ -74,7 +76,7 @@ const PatientDashboard = () => {
         return;
       }
 
-      const orderResponse = await axios.post('http://localhost:5000/api/payment/create-order');
+      const orderResponse = await axios.post(`${API_URL}/payment/create-order`);
       const { order, fee } = orderResponse.data;
 
       if (!order) {
@@ -91,7 +93,7 @@ const PatientDashboard = () => {
         handler: async function (response) {
           try {
             // Verify payment first
-            const verifyResponse = await axios.post('http://localhost:5000/api/payment/verify', {
+            const verifyResponse = await axios.post(`${API_URL}/payment/verify`, {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
@@ -102,7 +104,7 @@ const PatientDashboard = () => {
             }
 
             // Create appointment with payment details
-            const appointmentResponse = await axios.post('http://localhost:5000/appointments/create', {
+            const appointmentResponse = await axios.post(`${API_URL}/appointments/create`, {
               patientId: user._id,
               doctorId: formData.doctorId,
               time: formData.time,
