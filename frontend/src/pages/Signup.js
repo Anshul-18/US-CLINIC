@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import authPageStyles from '../styles/authPageStyles';
+import { API_URL } from '../config/api';
 
 function Signup() {
   const [name, setName] = useState('');
@@ -20,7 +21,7 @@ function Signup() {
     setError('');
     
     try {
-      await axios.post('http://localhost:5000/auth/signup', {
+      await axios.post(`${API_URL}/auth/signup`, {
         name, email, password, role
       });
       navigate('/login');
