@@ -4,6 +4,8 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { setUser } from '../utils/auth';
 import authPageStyles from '../styles/authPageStyles';
+import { API_URL } from '../config/api';
+
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -20,7 +22,8 @@ function Login() {
     setError('');
     
     try {
-      const res = await axios.post('http://localhost:5000/auth/login', {
+      // const res = await axios.post('http://localhost:5000/auth/login', {
+      const res = await axios.post(`${API_URL}/auth/login`, {
         email, password, role
       });
       setUser(res.data.user);
