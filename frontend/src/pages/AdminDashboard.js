@@ -13,7 +13,8 @@ const AdminDashboard = () => {
 
   const fetchDoctors = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/auth/doctors');
+      // const res = await axios.get('http://localhost:5000/auth/doctors');
+      const res = await axios.get('https://us-clinic-1.onrender.com/');
       setDoctors(res.data);
     } catch (error) {
       console.error('Error fetching doctors:', error);

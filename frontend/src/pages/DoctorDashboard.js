@@ -3,6 +3,7 @@ import axios from 'axios';
 import { getUser, logoutUser } from '../utils/auth';
 import { useNavigate } from 'react-router-dom';
 import doctorDashboardStyles from '../styles/doctorDashboardStyles';
+import { API_URL } from '../config/api';
 
 const DoctorDashboard = () => {
   const [appointments, setAppointments] = useState([]);
@@ -24,7 +25,7 @@ const DoctorDashboard = () => {
   const fetchAppointments = useCallback(async () => {
     if (!user) return;
     try {
-      const res = await axios.get('http://localhost:5000/appointments/all');
+      const res = await axios.get(`${API_URL}/appointments/all`);
       const appointmentsData = res.data.appointments || res.data;
       const doctorAppointments = appointmentsData.filter(
         appt => appt.doctor._id === user._id
@@ -59,7 +60,7 @@ const DoctorDashboard = () => {
 
   const handleUpdateStatus = async (appointmentId, status) => {
     try {
-      await axios.patch(`http://localhost:5000/appointments/status/${appointmentId}`, {
+      await axios.patch(`${API_URL}/appointments/status/${appointmentId}`, {
         status,
         doctorId: user._id
       });
@@ -91,7 +92,7 @@ const DoctorDashboard = () => {
     
     try {
       // For now, we'll update the time directly (you might want to create a specific reschedule endpoint)
-      await axios.patch(`http://localhost:5000/appointments/status/${rescheduleData.appointmentId}`, {
+      await axios.patch(`${API_URL}/appointments/status/${rescheduleData.appointmentId}`, {
         status: 'confirmed',
         doctorId: user._id
       });
