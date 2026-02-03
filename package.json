@@ -1,4 +1,21 @@
 {
+  "name": "us-clinic",
+  "version": "1.0.0",
+  "description": "US Clinic Management System - MERN Stack Application",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "npm run server",
+    "server": "cd backend && npm start",
+    "client": "cd frontend && npm start",
+    "dev": "cd backend && npm run dev",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "setup": "node setup.js",
+    "heroku-postbuild": "cd frontend && npm install && npm run build"
+  },
+  "keywords": ["clinic", "mern", "healthcare", "appointment"],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "axios": "^1.10.0"
   }
