@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { getUser, logoutUser } from '../utils/auth';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 import doctorDashboardStyles from '../styles/doctorDashboardStyles';
 import { API_URL } from '../config/api';
 
@@ -22,6 +23,14 @@ const DoctorDashboard = () => {
   });
   const user = getUser();
   const navigate = useNavigate();
+
+  // Check authentication on component mount
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
   const fetchAppointments = useCallback(async () => {
     if (!user) return;
     try {
@@ -131,7 +140,9 @@ const DoctorDashboard = () => {
     }
   };
   return (
-    <div style={doctorDashboardStyles.container}>
+    <>
+      <Navbar variant="landing" />
+      <div style={doctorDashboardStyles.container}>
       <header style={doctorDashboardStyles.header}>
         <h2 style={doctorDashboardStyles.welcomeText}>
           Welcome, Dr. {user ? user.name : 'Doctor'}
@@ -519,7 +530,8 @@ const DoctorDashboard = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

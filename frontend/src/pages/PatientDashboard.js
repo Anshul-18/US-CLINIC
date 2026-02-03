@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { getUser, logoutUser } from '../utils/auth';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 import patientDashboardStyles from '../styles/patientDashboardStyles';
 import { API_URL } from '../config/api';
 
@@ -18,7 +19,16 @@ const PatientDashboard = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const user = getUser();
-  const navigate = useNavigate();const fetchAppointments = useCallback(async () => {
+  const navigate = useNavigate();
+
+  // Check authentication on component mount
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+
+  const fetchAppointments = useCallback(async () => {
     if (!user) return;
     try {
       const res = await axios.get(`${API_URL}/appointments/all`);
@@ -55,92 +65,54 @@ const PatientDashboard = () => {
       [name]: value
     }));
   };
-  const loadScript = (src) => {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
 
   const handleSubmitAppointment = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     
     try {
-      const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
-      if (!res) {
-        alert('Failed to load Razorpay SDK. Please check your internet connection.');
-        return;
+      // For testing purposes, we'll simulate payment
+      // In production, you would integrate Stripe Elements for card input
+      
+      // Create payment intent
+      const paymentIntentResponse = await axios.post(`${API_URL}/api/payment/create-payment-intent`);
+      const { paymentIntentId, fee } = paymentIntentResponse.data;
+
+      if (!paymentIntentId) {
+        throw new Error('No payment intent received from server');
       }
 
-      const orderResponse = await axios.post(`${API_URL}/payment/create-order`);
-      const { order, fee } = orderResponse.data;
+      // Simulate payment confirmation (in production, use Stripe Elements)
+      const confirmResponse = await axios.post(`${API_URL}/api/payment/confirm`, {
+        paymentIntentId: paymentIntentId
+      });
 
-      if (!order) {
-        throw new Error('No order received from server');
+      if (!confirmResponse.data.success) {
+        throw new Error('Payment confirmation failed');
       }
 
-      const options = {
-        key: 'rzp_test_rmDkuhxFcgXMgb',
-        amount: order.amount,
-        currency: order.currency,
-        name: "US-CLINIC",
-        description: "Appointment Booking Payment",
-        order_id: order.id,
-        handler: async function (response) {
-          try {
-            // Verify payment first
-            const verifyResponse = await axios.post(`${API_URL}/payment/verify`, {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature
-            });
-            
-            if (!verifyResponse.data.success) {
-              throw new Error('Payment verification failed');
-            }
+      // Create appointment with payment details
+      const appointmentResponse = await axios.post(`${API_URL}/appointments/create`, {
+        patientId: user._id,
+        doctorId: formData.doctorId,
+        time: formData.time,
+        reason: formData.reason,
+        paymentId: paymentIntentId,
+        fee: fee
+      });
 
-            // Create appointment with payment details
-            const appointmentResponse = await axios.post(`${API_URL}/appointments/create`, {
-              patientId: user._id,
-              doctorId: formData.doctorId,
-              time: formData.time,
-              reason: formData.reason,
-              paymentId: response.razorpay_payment_id,
-              fee: fee // Include the fee from the order response
-            });
-
-            if (appointmentResponse.data.success) {
-              setFormData({ doctorId: '', time: '', reason: '' });
-              setShowModal(false);
-              fetchAppointments();
-              alert('Appointment booked successfully!');
-            } else {
-              throw new Error(appointmentResponse.data.message);
-            }
-          } catch (error) {
-            console.error('Error in appointment process:', error);
-            throw error; // Re-throw to be caught by outer catch block
-          }
-        },
-        prefill: {
-          name: user.name,
-          email: user.email,
-        },
-        theme: {
-          color: "#3B82F6"
-        }
-      };
-
-      const paymentObject = new window.Razorpay(options);
-      paymentObject.open();
+      if (appointmentResponse.data.success) {
+        setFormData({ doctorId: '', time: '', reason: '' });
+        setShowModal(false);
+        fetchAppointments();
+        alert('Appointment booked successfully!');
+      } else {
+        throw new Error(appointmentResponse.data.message);
+      }
 
     } catch (error) {
       console.error('Error in appointment booking:', error);
-      alert(error.response?.data?.message || 'Error creating appointment. Please contact support.');
+      alert(error.response?.data?.message || error.message || 'Error creating appointment. Please contact support.');
     } finally {
       setIsSubmitting(false);
     }
@@ -179,26 +151,98 @@ const PatientDashboard = () => {
   };
 
   return (
-    <div style={patientDashboardStyles.container}>
-      <header style={patientDashboardStyles.header}>
-        <h2 style={patientDashboardStyles.welcomeText}>
-          Welcome, {user ? user.name : 'Guest'}
-        </h2>
-        <button 
-          onClick={handleLogout} 
-          style={patientDashboardStyles.logoutButton}
-          onMouseOver={(e) => {
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 6px 20px rgba(238, 90, 82, 0.6)';
-          }}
-          onMouseOut={(e) => {
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 15px rgba(238, 90, 82, 0.4)';
-          }}
-        >
-          Logout
-        </button>
-      </header>
+    <>
+      <Navbar variant="landing" />
+      <div style={patientDashboardStyles.page}>
+      {/* Welcome Hero Section */}
+      <div style={patientDashboardStyles.welcomeHero}>
+        <div style={patientDashboardStyles.welcomePattern}></div>
+        <div style={patientDashboardStyles.welcomeContent}>
+          <header style={patientDashboardStyles.header}>
+            <div>
+              <h1 style={patientDashboardStyles.welcomeText}>
+                👋 Welcome back, {user ? user.name : 'Guest'}!
+              </h1>
+              <p style={patientDashboardStyles.welcomeSubtext}>
+                Manage your appointments and health records
+              </p>
+            </div>
+          </header>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div style={patientDashboardStyles.statsSection}>
+        <div style={patientDashboardStyles.statsGrid}>
+          <div 
+            style={patientDashboardStyles.statCard}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 15px 40px rgba(59, 130, 246, 0.25)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.15)';
+            }}
+          >
+            <div style={patientDashboardStyles.statIcon}>📅</div>
+            <div style={patientDashboardStyles.statValue}>{appointments.length}</div>
+            <div style={patientDashboardStyles.statLabel}>Total Appointments</div>
+          </div>
+          
+          <div 
+            style={patientDashboardStyles.statCard}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 15px 40px rgba(59, 130, 246, 0.25)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.15)';
+            }}
+          >
+            <div style={patientDashboardStyles.statIcon}>⏳</div>
+            <div style={patientDashboardStyles.statValue}>
+              {appointments.filter(a => a.status.toLowerCase() === 'pending').length}
+            </div>
+            <div style={patientDashboardStyles.statLabel}>Pending</div>
+          </div>
+          
+          <div 
+            style={patientDashboardStyles.statCard}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 15px 40px rgba(59, 130, 246, 0.25)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.15)';
+            }}
+          >
+            <div style={patientDashboardStyles.statIcon}>✅</div>
+            <div style={patientDashboardStyles.statValue}>
+              {appointments.filter(a => a.status.toLowerCase() === 'confirmed').length}
+            </div>
+            <div style={patientDashboardStyles.statLabel}>Confirmed</div>
+          </div>
+          
+          <div 
+            style={patientDashboardStyles.statCard}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'translateY(-8px)';
+              e.currentTarget.style.boxShadow = '0 15px 40px rgba(59, 130, 246, 0.25)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.15)';
+            }}
+          >
+            <div style={patientDashboardStyles.statIcon}>👨‍⚕️</div>
+            <div style={patientDashboardStyles.statValue}>{doctors.length}</div>
+            <div style={patientDashboardStyles.statLabel}>Available Doctors</div>
+          </div>
+        </div>
+      </div>
         <main style={patientDashboardStyles.mainContent}>
         <h3 style={patientDashboardStyles.sectionTitle}>Your Appointments</h3>
         
@@ -443,7 +487,7 @@ const PatientDashboard = () => {
                 <button
                   type="button"
                   onClick={closeModal}
-                  style={patientDashboardStyles.cancelButton}
+                  style={patientDashboardStyles.modalCancelButton}
                   onMouseOver={(e) => {
                     e.target.style.background = 'rgba(107, 114, 128, 0.2)';
                   }}
@@ -482,6 +526,7 @@ const PatientDashboard = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

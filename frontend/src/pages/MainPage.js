@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 import mainPageStyles from '../styles/mainPageStyles';
 
 const MainPage = () => {
@@ -8,41 +9,7 @@ const MainPage = () => {
   return (
     <div style={mainPageStyles.page}>
       {/* Navigation Bar */}
-      <nav style={mainPageStyles.navbar}>
-        <div style={mainPageStyles.logo}>
-          🏥 US-Clinic
-        </div>
-        <div style={mainPageStyles.navButtonContainer}>
-          <button 
-            style={{...mainPageStyles.navButton, ...mainPageStyles.loginButton}}
-            onClick={() => navigate('/login')}
-            onMouseOver={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.3)';
-              e.target.style.transform = 'translateY(-2px)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-              e.target.style.transform = 'translateY(0)';
-            }}
-          >
-            Login
-          </button>
-          <button 
-            style={{...mainPageStyles.navButton, ...mainPageStyles.signupButton}}
-            onClick={() => navigate('/signup')}
-            onMouseOver={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.6)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
-            }}
-          >
-            Sign Up
-          </button>
-        </div>
-      </nav>
+      <Navbar variant="landing" />
 
       {/* Hero Section */}
       <section style={mainPageStyles.hero}>
@@ -96,7 +63,7 @@ const MainPage = () => {
 
       {/* Features Section */}
       <section style={mainPageStyles.featuresSection}>
-        <h2 style={mainPageStyles.sectionTitle}>Why Choose US-Clinic?</h2>
+        <h2 style={mainPageStyles.sectionTitle}>Why Choose US-CLINIC?</h2>
         <p style={mainPageStyles.sectionSubtitle}>
           We combine cutting-edge technology with compassionate care to deliver 
           an exceptional healthcare experience for every patient.
@@ -346,7 +313,7 @@ const MainPage = () => {
       <section style={mainPageStyles.ctaSection}>
         <h2 style={mainPageStyles.ctaTitle}>Ready to Get Started?</h2>
         <p style={mainPageStyles.ctaDescription}>
-          Join thousands of satisfied patients who trust US-Clinic for their healthcare needs. 
+          Join thousands of satisfied patients who trust US-CLINIC for their healthcare needs. 
           Book your appointment today and experience the difference.
         </p>
         <button 
@@ -375,7 +342,7 @@ const MainPage = () => {
             <span style={mainPageStyles.footerLink}>Terms of Service</span>
           </div>
           <p style={mainPageStyles.footerText}>
-            © 2025 US-Clinic. All rights reserved. | Providing quality healthcare since 2010
+            © 2025 US-CLINIC. All rights reserved. | Providing quality healthcare since 2010
           </p>
         </div>
       </footer>

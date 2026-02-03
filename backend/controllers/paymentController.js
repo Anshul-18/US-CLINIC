@@ -1,43 +1,73 @@
-const Razorpay = require('razorpay');
-const crypto = require('crypto');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_your_key_here');
 
-const razorpay = new Razorpay({
-  key_id: 'rzp_test_rmDkuhxFcgXMgb',
-  key_secret: 'DDV6XaFdhwFTbqbWb1gCOP5B'
-});
-
-if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-  throw new Error('RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be provided in environment variables');
-}
-
-const createPaymentOrder = async (req, res) => {
+const createPaymentIntent = async (req, res) => {
   try {
     const amount = Number(process.env.APPOINTMENT_FEE || 100);
-    const options = {
-      amount: amount * 100, // amount in smallest currency unit (paise)
-      currency: "INR",
-      receipt: `receipt_${Date.now()}`
-    };
-
-    const order = await razorpay.orders.create(options);
-
-    if (!order) {
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to create order'
-      });
-    }
+    
+    // Create a PaymentIntent with the order amount and currency
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * 100, // amount in cents
+      currency: 'usd',
+      automatic_payment_methods: {
+        enabled: true,
+      },
+      metadata: {
+        appointment: 'clinic_appointment',
+        timestamp: Date.now().toString()
+      }
+    });
 
     res.status(200).json({
       success: true,
-      order,
-      fee: amount 
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      fee: amount
     });
   } catch (error) {
-    console.error('Error creating payment order:', error);
+    console.error('Error creating payment intent:', error);
     res.status(500).json({
       success: false,
-      message: 'Error creating payment order',
+      message: 'Error creating payment intent',
+      error: error.message
+    });
+  }
+};
+
+const confirmPayment = async (req, res) => {
+  try {
+    const { paymentIntentId } = req.body;
+
+    if (!paymentIntentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing payment intent ID'
+      });
+    }
+
+    // For testing: Confirm the payment intent with a test payment method
+    const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
+      payment_method: 'pm_card_visa', // Test payment method
+      return_url: 'https://your-app.com/return' // Required for some payment methods
+    });
+
+    if (paymentIntent.status === 'succeeded') {
+      res.status(200).json({
+        success: true,
+        message: 'Payment confirmed successfully',
+        paymentId: paymentIntent.id
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: `Payment status: ${paymentIntent.status}`
+      });
+    }
+
+  } catch (error) {
+    console.error('Payment confirmation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error confirming payment',
       error: error.message
     });
   }
@@ -45,39 +75,30 @@ const createPaymentOrder = async (req, res) => {
 
 const verifyPayment = async (req, res) => {
   try {
-    const { 
-      razorpay_order_id, 
-      razorpay_payment_id, 
-      razorpay_signature 
-    } = req.body;
+    const { paymentIntentId } = req.body;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    if (!paymentIntentId) {
       return res.status(400).json({
         success: false,
-        message: 'Missing payment verification parameters'
+        message: 'Missing payment intent ID'
       });
     }
 
-    // Verify signature
-    const sign = razorpay_order_id + "|" + razorpay_payment_id;
-    const expectedSign = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(sign.toString())
-      .digest("hex");
+    // Retrieve the payment intent to verify its status
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-    if (razorpay_signature !== expectedSign) {
-      console.error('Payment signature verification failed');
-      return res.status(400).json({
+    if (paymentIntent.status === 'succeeded') {
+      res.status(200).json({
+        success: true,
+        message: 'Payment verified successfully',
+        paymentId: paymentIntent.id
+      });
+    } else {
+      res.status(400).json({
         success: false,
-        message: 'Invalid payment signature'
+        message: `Payment not successful. Status: ${paymentIntent.status}`
       });
     }
-
-    res.status(200).json({
-      success: true,
-      message: 'Payment verified successfully',
-      paymentId: razorpay_payment_id
-    });
 
   } catch (error) {
     console.error('Payment verification error:', error);
@@ -89,7 +110,16 @@ const verifyPayment = async (req, res) => {
   }
 };
 
+const getPublishableKey = async (req, res) => {
+  res.status(200).json({
+    success: true,
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || 'pk_test_your_key_here'
+  });
+};
+
 module.exports = {
-  createPaymentOrder,
-  verifyPayment
+  createPaymentIntent,
+  confirmPayment,
+  verifyPayment,
+  getPublishableKey
 };

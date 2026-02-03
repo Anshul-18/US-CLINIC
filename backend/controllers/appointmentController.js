@@ -120,6 +120,14 @@ const getAppointmentsByPatient = async (req, res) => {
   try {
     const { patientId } = req.params;
 
+    // Validate ObjectId format
+    if (!patientId || !patientId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid patient ID format' 
+      });
+    }
+
     // Validate patient exists
     const patient = await User.findById(patientId);
     if (!patient || patient.role !== 'patient') {
@@ -154,6 +162,14 @@ const getAppointmentsByPatient = async (req, res) => {
 const getAppointmentsByDoctor = async (req, res) => {
   try {
     const { doctorId } = req.params;
+
+    // Validate ObjectId format
+    if (!doctorId || !doctorId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid doctor ID format' 
+      });
+    }
 
     // Validate doctor exists
     const doctor = await User.findById(doctorId);

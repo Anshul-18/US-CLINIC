@@ -1,1 +1,2 @@
-export const API_URL = 'https://us-clinic-1.onrender.com';
+// Use local backend for development
+export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
