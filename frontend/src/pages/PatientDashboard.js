@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { getUser, logoutUser } from '../utils/auth';
+import { getUser } from '../utils/auth';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import PaymentModal from '../components/PaymentModal';
 import patientDashboardStyles from '../styles/patientDashboardStyles';
 import { API_URL } from '../config/api';
 
@@ -11,16 +10,13 @@ import { API_URL } from '../config/api';
 const PatientDashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [doctors, setDoctors] = useState([]);
   const [expandedAppointment, setExpandedAppointment] = useState(null);
-  const [appointmentFee, setAppointmentFee] = useState(100); // Default fee
   const [formData, setFormData] = useState({
     doctorId: '',
     time: '',
     reason: ''
   });
-  const [pendingAppointmentData, setPendingAppointmentData] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const user = getUser();
   const navigate = useNavigate();
@@ -72,66 +68,54 @@ const PatientDashboard = () => {
 
   const handleSubmitAppointment = async (e) => {
     e.preventDefault();
-    
-    // Validate form data
-    if (!formData.doctorId || !formData.time) {
-      alert('Please select a doctor and appointment time');
-      return;
-    }
-
-    // Find selected doctor name
-    const selectedDoctor = doctors.find(doc => doc._id === formData.doctorId);
-    
-    // Prepare appointment details for payment
-    const appointmentDetails = {
-      doctorId: formData.doctorId,
-      doctorName: selectedDoctor ? selectedDoctor.name : 'Doctor',
-      time: formData.time,
-      reason: formData.reason,
-      fee: appointmentFee
-    };
-    
-    setPendingAppointmentData(appointmentDetails);
-    setShowModal(false);
-    setShowPaymentModal(true);
-  };
-
-  const handlePaymentSuccess = async (paymentId) => {
     setIsSubmitting(true);
     
     try {
-      // Verify payment first
-      const verifyResponse = await axios.post(`${API_URL}/api/payment/verify`, {
-        paymentIntentId: paymentId
-      });
+      // PAYMENT GATEWAY COMMENTED OUT - Direct appointment booking
+      // For testing purposes, we'll simulate payment
+      // In production, you would integrate Stripe Elements for card input
+      
+      // Create payment intent
+      /* 
+      const paymentIntentResponse = await axios.post(`${API_URL}/api/payment/create-payment-intent`);
+      const { paymentIntentId, fee } = paymentIntentResponse.data;
 
-      if (!verifyResponse.data.success) {
-        throw new Error('Payment verification failed');
+      if (!paymentIntentId) {
+        throw new Error('No payment intent received from server');
       }
 
-      // Create appointment with verified payment
+      // Simulate payment confirmation (in production, use Stripe Elements)
+      const confirmResponse = await axios.post(`${API_URL}/api/payment/confirm`, {
+        paymentIntentId: paymentIntentId
+      });
+
+      if (!confirmResponse.data.success) {
+        throw new Error('Payment confirmation failed');
+      }
+      */
+
+      // Create appointment without payment details (payment gateway commented out)
       const appointmentResponse = await axios.post(`${API_URL}/appointments/create`, {
         patientId: user._id,
-        doctorId: pendingAppointmentData.doctorId,
-        time: pendingAppointmentData.time,
-        reason: pendingAppointmentData.reason,
-        paymentId: paymentId,
-        fee: pendingAppointmentData.fee
+        doctorId: formData.doctorId,
+        time: formData.time,
+        reason: formData.reason,
+        // paymentId: paymentIntentId,
+        // fee: fee
       });
 
       if (appointmentResponse.data.success) {
         setFormData({ doctorId: '', time: '', reason: '' });
-        setPendingAppointmentData(null);
-        setShowPaymentModal(false);
+        setShowModal(false);
         fetchAppointments();
-        alert('🎉 Appointment booked successfully! You will receive a confirmation soon.');
+        alert('Appointment booked successfully!');
       } else {
         throw new Error(appointmentResponse.data.message);
       }
 
     } catch (error) {
-      console.error('Error creating appointment after payment:', error);
-      alert(error.response?.data?.message || error.message || 'Error creating appointment. Please contact support with your payment ID: ' + paymentId);
+      console.error('Error in appointment booking:', error);
+      alert(error.response?.data?.message || error.message || 'Error creating appointment. Please contact support.');
     } finally {
       setIsSubmitting(false);
     }
@@ -144,16 +128,6 @@ const PatientDashboard = () => {
   const closeModal = () => {
     setShowModal(false);
     setFormData({ doctorId: '', time: '', reason: '' });
-  };
-
-  const closePaymentModal = () => {
-    setShowPaymentModal(false);
-    setPendingAppointmentData(null);
-    setShowModal(true); // Reopen booking modal
-  };
-  const handleLogout = () => {
-    logoutUser();
-    navigate('/login');
   };
 
   const toggleAppointmentDetails = (appointmentId) => {
@@ -543,22 +517,12 @@ const PatientDashboard = () => {
                     }
                   }}
                 >
-                  {isSubmitting ? 'Submitting...' : 'Proceed to Payment'}
+                  {isSubmitting ? 'Submitting...' : 'Book Appointment'}
                 </button>
               </div>
             </form>
           </div>
         </div>
-      )}
-
-      {/* Payment Modal */}
-      {showPaymentModal && pendingAppointmentData && (
-        <PaymentModal
-          isOpen={showPaymentModal}
-          onClose={closePaymentModal}
-          appointmentDetails={pendingAppointmentData}
-          onPaymentSuccess={handlePaymentSuccess}
-        />
       )}
     </div>
     </>
