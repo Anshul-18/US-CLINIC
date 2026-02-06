@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { getUser, logoutUser } from '../utils/auth';
+import { getUser } from '../utils/auth';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import patientDashboardStyles from '../styles/patientDashboardStyles';
@@ -128,10 +128,6 @@ const PatientDashboard = () => {
   const closeModal = () => {
     setShowModal(false);
     setFormData({ doctorId: '', time: '', reason: '' });
-  };
-  const handleLogout = () => {
-    logoutUser();
-    navigate('/login');
   };
 
   const toggleAppointmentDetails = (appointmentId) => {
