@@ -5,12 +5,14 @@ const AppointmentSchema = new mongoose.Schema({
   time: Date,
   status: { type: String, default: 'Pending' },
   notifications: [{ message: String, seen: Boolean }],
-  paymentId: { type: String, required: true },
+  // PAYMENT GATEWAY COMMENTED OUT - Payment fields made optional
+  paymentId: { type: String, required: false }, // Changed from required: true
   paymentStatus: { 
     type: String, 
     enum: ['pending', 'completed', 'failed'],
     default: 'pending'
   },
-  fee: { type: Number, required: true }
+  fee: { type: Number, required: false }, // Changed from required: true
+  reason: { type: String } // Added reason field
 });
 module.exports = mongoose.model('Appointment', AppointmentSchema);

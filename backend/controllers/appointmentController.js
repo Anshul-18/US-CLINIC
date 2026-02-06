@@ -6,12 +6,23 @@ const createAppointment = async (req, res) => {
   try {
     const { patientId, doctorId, time, reason, paymentId, fee } = req.body;
 
-    if (!patientId || !doctorId || !time || !paymentId || !fee) {
+    // PAYMENT GATEWAY COMMENTED OUT - Direct appointment booking without payment validation
+    if (!patientId || !doctorId || !time) {
       return res.status(400).json({ 
         success: false, 
         message: 'Missing required fields for appointment creation' 
       });
     }
+    
+    // Payment validation commented out
+    /* 
+    if (!paymentId || !fee) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Payment information required' 
+      });
+    }
+    */
 
     // Check if patient exists
     const patient = await User.findById(patientId);
@@ -53,15 +64,18 @@ const createAppointment = async (req, res) => {
       });
     }
 
-    // Create the appointment
+    // Create the appointment (without payment fields - payment gateway commented out)
     const appointment = new Appointment({
       patient: patientId,
       doctor: doctorId,
       time: appointmentTime,
       reason: reason || '',
       status: 'pending',
-      paymentId: paymentId,
-      fee: Number(fee),
+      // Payment fields commented out
+      // paymentId: paymentId,
+      // fee: Number(fee),
+      ...(paymentId && { paymentId: paymentId }),
+      ...(fee && { fee: Number(fee) }),
       notifications: [{ 
         message: `New appointment request from ${patient.name}`, 
         seen: false,

@@ -71,10 +71,12 @@ const PatientDashboard = () => {
     setIsSubmitting(true);
     
     try {
+      // PAYMENT GATEWAY COMMENTED OUT - Direct appointment booking
       // For testing purposes, we'll simulate payment
       // In production, you would integrate Stripe Elements for card input
       
       // Create payment intent
+      /* 
       const paymentIntentResponse = await axios.post(`${API_URL}/api/payment/create-payment-intent`);
       const { paymentIntentId, fee } = paymentIntentResponse.data;
 
@@ -90,15 +92,16 @@ const PatientDashboard = () => {
       if (!confirmResponse.data.success) {
         throw new Error('Payment confirmation failed');
       }
+      */
 
-      // Create appointment with payment details
+      // Create appointment without payment details (payment gateway commented out)
       const appointmentResponse = await axios.post(`${API_URL}/appointments/create`, {
         patientId: user._id,
         doctorId: formData.doctorId,
         time: formData.time,
         reason: formData.reason,
-        paymentId: paymentIntentId,
-        fee: fee
+        // paymentId: paymentIntentId,
+        // fee: fee
       });
 
       if (appointmentResponse.data.success) {

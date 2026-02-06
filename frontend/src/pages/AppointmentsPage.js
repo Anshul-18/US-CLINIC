@@ -20,7 +20,7 @@ const AppointmentsPage = () => {
     setUser(currentUser);
     
     if (currentUser.role === 'patient') {
-      fetchAppointments(currentUser.id);
+      fetchAppointments(currentUser._id);
     } else {
       setLoading(false);
     }
@@ -29,7 +29,9 @@ const AppointmentsPage = () => {
   const fetchAppointments = async (patientId) => {
     try {
       const res = await axios.get(`${API_URL}/appointments/patient/${patientId}`);
-      setAppointments(res.data);
+      // Handle API response format: { success: true, appointments: [...] }
+      const appointmentsData = res.data.appointments || res.data;
+      setAppointments(appointmentsData);
     } catch (error) {
       console.error('Error fetching appointments:', error);
     } finally {
@@ -253,16 +255,19 @@ const AppointmentsPage = () => {
                 >
                   <div style={appointmentHeaderStyle}>
                     <div style={appointmentDateStyle}>
-                      📅 {formatDate(appointment.date)}
+                      📅 {formatDate(appointment.time)}
                     </div>
                     <div style={statusBadgeStyle(appointment.status)}>
                       {appointment.status || 'Pending'}
                     </div>
                   </div>
                   <div style={appointmentDetailStyle}>
-                    {appointment.doctorName && (
+                    {appointment.doctor && (
                       <div>
-                        <strong>👨‍⚕️ Doctor:</strong> Dr. {appointment.doctorName}
+                        <strong>👨‍⚕️ Doctor:</strong> Dr. {appointment.doctor.name}
+                        {appointment.doctor.specialization && (
+                          <span> ({appointment.doctor.specialization})</span>
+                        )}
                       </div>
                     )}
                     {appointment.reason && (
